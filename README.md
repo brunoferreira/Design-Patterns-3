@@ -4,5 +4,12 @@
 
 # Second Question
 
+## Test
 
-<!-- <img src="q2.jpg" alt="tests2"> -->
+<img src="q2t1.jpg" alt="test2-1">
+
+
+Result:
+
+
+<img src="q2t2.jpg" alt="test2-2">

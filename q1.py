@@ -3,11 +3,22 @@ import tkinter as tk
 import sqlite3 as sl
 
 class CommandHistory():
-    pass
+    """
+    Class for keep track of commands history
+    """
+    def __init__(self):
+        self.history = []
 
+    def push(self, command):
+        self.history.append(command)
+
+    def pop(self):
+        self.history.pop()
 
 class Client():
-   
+    """
+    Class for implementing Client GUI to use the bank application
+    """
     def __init__(self):
         self.ws = tk.Tk()
         self.ws.title('Cliente GUI')
@@ -61,7 +72,7 @@ class Client():
         amount.grid(row=4, column=1)
 
 
-        # button 
+        # tk.Button 
         balance_button = tk.Button(
             frame, 
             text="Consultar saldo", 
@@ -73,7 +84,7 @@ class Client():
 
         balance_button.grid(row=5, column=0, pady=10)
 
-        # tk.Button 
+        # tk.Buttons
         extract_button = tk.Button(frame, text="Consultar extrato", padx=0, pady=10, relief=tk.RAISED, font=("Times", "14", "bold"),
             command=lambda: self.extract_handler(account.get(), password.get()))
         extract_button.grid(row=5, column=1, pady=10)
@@ -87,6 +98,9 @@ class Client():
         register_button.grid(row=5, column=3, pady=10)
 
     def balance_handler(self, account, password):
+        """
+        Balance implementation, which calls BalanceCommand
+        """
         app = Application()
         balance_command = BalanceCommand(app, self)
         balance_command.account = account
@@ -104,6 +118,9 @@ class Client():
         exit.grid(row=1, column=0)
     
     def extract_handler(self, account, password):
+        """
+        Extract implementation, which calls ExtractCommand
+        """
         app = Application()
         extract_command = ExtractCommand(app, self)
         extract_command.account = account
@@ -121,6 +138,9 @@ class Client():
         exit.grid(row=1, column=0)
 
     def transfer_handler(self, account, password, receiver, amount):
+        """
+        Transfer implementation, which calls TransferCommand
+        """
         app = Application()
         transfer_command = TransferCommand(app, self)
         transfer_command.account = account
@@ -140,6 +160,9 @@ class Client():
         exit.grid(row=1, column=0)
 
     def register_handler(self, account, password, amount):
+        """
+        Registration implementation, which calls RegisterCommand
+        """
         app = Application()
         register_command = RegisterCommand(app, self)
         register_command.account = account
@@ -157,14 +180,16 @@ class Client():
         exit = tk.Button(popup, text="Ok", command=popup.destroy)
         exit.grid(row=1, column=0)
     
-
     def main_loop(self):
         self.ws.mainloop()   
 
 
 class Application():
-    
+    """
+    Bank app class, which implements the funcionalities and communicates with database
+    """
     def __init__(self):
+        self.history = CommandHistory()
         con = sl.connect('app.db')
         cur = con.cursor()
         cur.execute('''CREATE TABLE IF NOT EXISTS accounts (
@@ -177,12 +202,18 @@ class Application():
         con.close()
 
     def login(self, account, password):
+        """
+        Login method
+        """
         if len(self.get_account(account)) == 0:
             return False
         acc = self.get_account(account)[0]
         return password == acc['password']
 
     def deserialize(self, serialized_data):
+        """
+        Deserialize auxiliar method
+        """
         account = {}
         account['id'] = serialized_data[0]
         account['account'] = serialized_data[1]
@@ -192,6 +223,9 @@ class Application():
         return account
 
     def register(self, account, password, amount):
+        """
+        Account registrator method
+        """
         if len(self.get_account(account)) > 0:
             return "Conta já existente"
         con = sl.connect('app.db')
@@ -204,6 +238,9 @@ class Application():
         return True
 
     def get_account(self, account):
+        """
+        Get account by number of account
+        """
         con = sl.connect('app.db')
         cur = con.cursor()
         table = 'accounts'
@@ -215,6 +252,9 @@ class Application():
         return []
 
     def get_balance(self, account, password):
+        """
+        Get balance of acount if password is correct
+        """
         if self.login(account, password):
             acc = self.get_account(account)[0]
             return acc['balance']
@@ -222,6 +262,9 @@ class Application():
             return "Conta ou senha inválidos"
 
     def get_extract(self, account, password):
+        """
+        Get extract of acount if password is correct
+        """
         if self.login(account, password):
             acc = self.get_account(account)[0]
             return acc['extract']
@@ -229,6 +272,9 @@ class Application():
             return "Conta ou senha inválidos"
 
     def transfer(self, account, password, receiver, amount):
+        """
+        Transfer amount from account to receiver if password is correct
+        """
         amount = float(amount)
         if self.login(account, password):
             acc = self.get_account(account)[0]
@@ -253,7 +299,9 @@ class Application():
 
 
 class Command():
-    
+    """
+    Command abstract class
+    """
     def __init__(self, app, client):
         self.app = app
         self.client = client
@@ -264,25 +312,33 @@ class Command():
 
 
 class BalanceCommand(Command):
-    
+    """
+    Balance command class (inherits from Command abstract class)
+    """
     def execute(self):
         return self.app.get_balance(self.account, self.password)
 
 
 class ExtractCommand(Command):
-
+    """
+    Extract command class (inherits from Command abstract class)
+    """
     def execute(self):
         return self.app.get_extract(self.account, self.password)
 
 
 class TransferCommand(Command):
-
+    """
+    Transfer command class (inherits from Command abstract class)
+    """
     def execute(self):
         return self.app.transfer(self.account, self.password, self.receiver, self.amount)
 
 
 class RegisterCommand(Command):
-
+    """
+    Register command class (inherits from Command abstract class)
+    """
     def execute(self):
         return self.app.register(self.account, self.password, self.amount)
 
